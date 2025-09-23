@@ -4,8 +4,16 @@ import { useCallback, useState, useEffect, useRef } from "react";
 import MarkerInfoWindow from "@/components/MarkerInfoWindow";
 import { Badge } from "@/components/ui/badge";
 
-const MarkerWithInfo=({position, currentZoom})=>{
-    const [showInfo, setShowInfo] = useState(false);
+const MarkerWithInfo = ({ 
+  position, 
+  currentZoom, 
+  eventId, 
+  isSelected, 
+  eventDetails, 
+  isLoadingDetails, 
+  onMarkerClick, 
+  onInfoClose 
+}) => {
     const [isHovered, setIsHovered] = useState(false);
     const [markerRef, marker] = useAdvancedMarkerRef();
     const infoWindowRef = useRef(null);
@@ -26,24 +34,17 @@ const MarkerWithInfo=({position, currentZoom})=>{
 
     const radiusSize = getRadiusSize();
 
-    // Sample marker data
-    const markerData = {
-        title: "Bangalore Palace",
-        description: "A historic palace located in Bangalore, known for its beautiful architecture and gardens.",
-        tags: ["historic", "architecture", "tourist spot", "palace"]
-    };
-
-    const handleMarkerClick=useCallback(()=>{
-        setShowInfo(prev => !prev);
+    const handleMarkerClick = useCallback(() => {
+        onMarkerClick(eventId);
         
         // Pan to marker when clicked (smooth animation)
-        if (map && !showInfo) {
+        if (map && !isSelected) {
             map.panTo(position);
         }
-    }, [map, position, showInfo])
+    }, [map, position, isSelected, eventId, onMarkerClick]);
     
-    const handleInfoClose=useCallback(()=>{
-        setShowInfo(false);
+    const handleInfoClose = useCallback(() => {
+        onInfoClose();
         
         // Optional: Reset map view when closing info window
         if (map) {
@@ -66,19 +67,19 @@ const MarkerWithInfo=({position, currentZoom})=>{
     // Close info window when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (showInfo && infoWindowRef.current && !infoWindowRef.current.contains(event.target)) {
-                setShowInfo(false);
+            if (isSelected && infoWindowRef.current && !infoWindowRef.current.contains(event.target)) {
+                onInfoClose();
             }
         };
 
-        if (showInfo) {
+        if (isSelected) {
             document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showInfo]);
+    }, [isSelected, onInfoClose]);
 
     return(
         <>
@@ -90,17 +91,17 @@ const MarkerWithInfo=({position, currentZoom})=>{
                 >
                     <div 
                         className={`rounded-full transition-all duration-500 ease-out ${
-                            showInfo ? 'bg-green-400/40' : isHovered ? 'bg-green-500/30' : 'bg-green-600/25'
+                            isSelected ? 'bg-green-400/40' : isHovered ? 'bg-green-500/30' : 'bg-green-600/25'
                         }`}
                         style={{
                             width: `${radiusSize}px`,
                             height: `${radiusSize}px`,
-                            boxShadow: showInfo 
+                            boxShadow: isSelected 
                                 ? `0 0 ${radiusSize/1.5}px rgba(34, 197, 94, 0.8), 0 0 ${radiusSize}px rgba(34, 197, 94, 0.6), 0 0 ${radiusSize*1.5}px rgba(34, 197, 94, 0.3)`
                                 : isHovered 
                                 ? `0 0 ${radiusSize/2}px rgba(34, 197, 94, 0.7), 0 0 ${radiusSize}px rgba(34, 197, 94, 0.4), 0 0 ${radiusSize*1.2}px rgba(34, 197, 94, 0.2)`
                                 : `0 0 ${radiusSize/2.5}px rgba(34, 197, 94, 0.6), 0 0 ${radiusSize/1.5}px rgba(34, 197, 94, 0.3), 0 0 ${radiusSize}px rgba(34, 197, 94, 0.15)`,
-                            animation: showInfo ? 'pulse 2s infinite' : 'none'
+                            animation: isSelected ? 'pulse 2s infinite' : 'none'
                         }}
                     />
                 </AdvancedMarker>
@@ -112,18 +113,18 @@ const MarkerWithInfo=({position, currentZoom})=>{
                 onClick={handleMarkerClick}
                 onMouseEnter={handleMarkerHover}
                 onMouseLeave={handleMarkerLeave}
-                zIndex={showInfo ? 999 : 1}
+                zIndex={isSelected ? 999 : 1}
                 className="transition-all duration-300 ease-out"
             >
                 {/* Dark themed Pin with enhanced glow effect */}
                 <div 
                     className={`transition-all duration-300 ease-out ${
-                        showInfo ? 'drop-shadow-[0_0_20px_rgba(34,197,94,0.9)]' : 
+                        isSelected ? 'drop-shadow-[0_0_20px_rgba(34,197,94,0.9)]' : 
                         isHovered ? 'drop-shadow-[0_0_15px_rgba(34,197,94,0.7)]' : 
                         'drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]'
                     }`}
                     style={{
-                        filter: showInfo 
+                        filter: isSelected 
                             ? 'drop-shadow(0 0 20px rgba(34, 197, 94, 0.9)) drop-shadow(0 0 40px rgba(34, 197, 94, 0.4))'
                             : isHovered 
                             ? 'drop-shadow(0 0 15px rgba(34, 197, 94, 0.7)) drop-shadow(0 0 30px rgba(34, 197, 94, 0.3))'
@@ -134,11 +135,11 @@ const MarkerWithInfo=({position, currentZoom})=>{
                         background="hsl(0 0% 3.9%)"
                         borderColor="hsl(0 0% 14.9%)"
                         glyphColor="hsl(142 76% 36%)"
-                        scale={showInfo ? 1.3 : isHovered ? 1.1 : 1}
+                        scale={isSelected ? 1.3 : isHovered ? 1.1 : 1}
                     />
                 </div>
             </AdvancedMarker>
-            {showInfo && (
+            {isSelected && (
                 <AdvancedMarker
                     position={position}
                     zIndex={1000}
@@ -149,7 +150,9 @@ const MarkerWithInfo=({position, currentZoom})=>{
                     >
                         <MarkerInfoWindow
                             MarkerRef={marker}
-                            MarkerId=""
+                            MarkerId={eventId}
+                            eventDetails={eventDetails}
+                            isLoadingDetails={isLoadingDetails}
                             handleInfoClose={handleInfoClose}
                         />
                     </div>

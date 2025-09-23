@@ -1,8 +1,11 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { APIProvider, Map, useApiLoadingStatus, useApiIsLoaded } from '@vis.gl/react-google-maps';
-import MarkerwithInfo from './MarkerWithInfo.jsx'; // Assuming MarkerWithInfo is in the same directory
+import MarkerwithInfo from './MarkerWithInfo.jsx';
 import MapErrorBoundary from './MapErrorBoundary.jsx';
 import Navbar from './Navbar.jsx';
+
+// API Configuration
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 // Loading component to show while API loads
 const LoadingOverlay = () => {
@@ -43,10 +46,86 @@ const MapComponent = () => {
   const [currentZoom, setCurrentZoom] = useState(12);
   const [isMapMoving, setIsMapMoving] = useState(false);
   
+  // Event data states
+  const [events, setEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [eventDetailsCache, setEventDetailsCache] = useState({}); // Cache for event details
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  
   // Debouncing refs for navbar animation
   const minimizeTimeoutRef = useRef(null);
   const expandTimeoutRef = useRef(null);
   const fallbackTimeoutRef = useRef(null); // Fallback to ensure navbar always returns
+  
+  // API Functions
+  const fetchAllEvents = async () => {
+    try {
+      setIsLoadingEvents(true);
+      const response = await fetch(`${API_BASE_URL}/get-all-events`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch events');
+      }
+      const data = await response.json();
+      setEvents(data);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setEvents([]);
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  };
+
+  const fetchEventDetails = async (eventId) => {
+    // Check if we already have the details cached
+    if (eventDetailsCache[eventId]) {
+      console.log(`Using cached details for event ${eventId}`);
+      return eventDetailsCache[eventId];
+    }
+
+    try {
+      setIsLoadingDetails(true);
+      console.log(`Fetching details for event ${eventId}`);
+      const response = await fetch(`${API_BASE_URL}/get-event-details/${eventId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch event details');
+      }
+      const data = await response.json();
+      
+      // Cache the fetched details
+      setEventDetailsCache(prev => ({
+        ...prev,
+        [eventId]: data
+      }));
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching event details:', error);
+      return null;
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+
+  // Handle marker click with lazy loading and caching
+  const handleMarkerClick = useCallback(async (eventId) => {
+    setSelectedEvent(eventId);
+    
+    // Only fetch if not already cached
+    if (!eventDetailsCache[eventId]) {
+      await fetchEventDetails(eventId);
+    }
+  }, [eventDetailsCache]);
+
+  // Handle info window close
+  const handleInfoClose = useCallback(() => {
+    setSelectedEvent(null);
+  }, []);
+
+  // Load events on component mount
+  useEffect(() => {
+    fetchAllEvents();
+  }, []);
   
   // Use dark-themed map ID (create a separate one in Cloud Console for dark theme)
   const DARK_MAP_ID = 'da06caae89cc4238b61f553a'; // Configure this as dark in Cloud Console
@@ -212,8 +291,22 @@ const MapComponent = () => {
             onDragend={handleDragEnd}
             onZoomStart={handleZoomStart}
             onZoomEnd={handleZoomEnd}
-          />
-          <MarkerwithInfo position={defaultCenter} currentZoom={currentZoom} />
+          >
+            {/* Render markers for all events */}
+            {!isLoadingEvents && events.map((event) => (
+              <MarkerwithInfo
+                key={event.id}
+                position={{ lat: event.latitude, lng: event.longitude }}
+                currentZoom={currentZoom}
+                eventId={event.id}
+                isSelected={selectedEvent === event.id}
+                eventDetails={selectedEvent === event.id ? eventDetailsCache[event.id] : null}
+                isLoadingDetails={selectedEvent === event.id ? isLoadingDetails : false}
+                onMarkerClick={handleMarkerClick}
+                onInfoClose={handleInfoClose}
+              />
+            ))}
+          </Map>
           <Navbar isMapMoving={isMapMoving} />
         </MapErrorBoundary>
       </APIProvider>
