@@ -64,17 +64,17 @@ const MarkerInfoWindow = memo(({ event, onClose, isLoading, isCached, isPosition
       </div>
       
       <div 
-        className="rounded-lg shadow-2xl relative z-[10001] translate-y-2"
+        className="rounded-lg shadow-2xl relative z-[10001] translate-y-2 marker-info-window"
         style={{
           backgroundColor: `hsl(var(--marker-background))`,
           borderColor: `hsl(var(--marker-border))`,
           borderWidth: '1px',
-          minWidth: '420px',
+          minWidth: '280px',
           maxWidth: '500px',
-          width: '480px' // Fixed width for consistent layout
+          width: 'clamp(280px, 90vw, 480px)' // Responsive width: 90% of viewport width, min 280px, max 480px
         }}
       >
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
         {/* Header with close button */}
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center space-x-2">
@@ -126,17 +126,15 @@ const MarkerInfoWindow = memo(({ event, onClose, isLoading, isCached, isPosition
             </span>
           </div>
         ) : event ? (
-          <div className="flex space-x-4 min-h-[140px]">
-            {/* Left Side - Image (35% width) - Larger and Clickable */}
+          <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 min-h-[140px]">
+            {/* Left Side - Image - Responsive */}
             {event.image && (
               <div 
-                className="flex-shrink-0 rounded-lg overflow-hidden border hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative"
+                className="flex-shrink-0 rounded-lg overflow-hidden border hover:shadow-lg transition-all duration-200 hover:scale-[1.02] relative w-full sm:w-[40%] h-32 sm:h-[140px]"
                 style={{
                   backgroundColor: `hsl(var(--marker-surface))`,
                   borderColor: `hsl(var(--marker-border))`,
-                  width: '40%', // Increased from 35% to 40%
-                  minWidth: '160px', // Increased from 140px
-                  height: '140px', // Increased from 120px
+                  minWidth: '0', // Allow shrinking on mobile
                   cursor: 'pointer'
                 }}
                 onClick={handleImageClick}
@@ -171,11 +169,11 @@ const MarkerInfoWindow = memo(({ event, onClose, isLoading, isCached, isPosition
               </div>
             )}
 
-            {/* Right Side - Content (60% width) */}
+            {/* Right Side - Content - Responsive */}
             <div 
-              className="space-y-3 overflow-hidden"
+              className="space-y-2 sm:space-y-3 overflow-hidden w-full"
               style={{
-                width: event.image ? '60%' : '100%', // 60% when image present (40% + 60% = 100%), 100% when no image
+                width: event.image ? '100%' : '100%', // Full width on mobile, 60% on desktop handled by flex classes
                 minWidth: 0 // Allow shrinking
               }}
             >
@@ -186,10 +184,12 @@ const MarkerInfoWindow = memo(({ event, onClose, isLoading, isCached, isPosition
                     href={event.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold transition-colors duration-200 hover:underline text-sm leading-tight block truncate"
+                    className="font-semibold transition-colors duration-200 hover:underline text-sm sm:text-sm leading-tight block"
                     style={{
                       color: `hsl(var(--marker-accent))`,
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word'
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.color = `hsl(var(--marker-primary-hover))`;
@@ -205,9 +205,11 @@ const MarkerInfoWindow = memo(({ event, onClose, isLoading, isCached, isPosition
                   </a>
                 ) : (
                   <h3 
-                    className="font-semibold text-sm leading-tight truncate"
+                    className="font-semibold text-sm leading-tight"
                     style={{
-                      color: `hsl(var(--marker-text-primary))`
+                      color: `hsl(var(--marker-text-primary))`,
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word'
                     }}
                     title={event.name}
                   >
@@ -221,7 +223,7 @@ const MarkerInfoWindow = memo(({ event, onClose, isLoading, isCached, isPosition
                 <>
                   <div className="mb-2">
                     <p 
-                      className="text-xs leading-relaxed line-clamp-2 break-words"
+                      className="text-xs leading-relaxed line-clamp-3 sm:line-clamp-2 break-words"
                       style={{
                         color: `hsl(var(--marker-text-secondary))`,
                         wordWrap: 'break-word',
@@ -250,10 +252,11 @@ const MarkerInfoWindow = memo(({ event, onClose, isLoading, isCached, isPosition
                           📅
                         </span>
                         <span 
-                          className="ml-1 break-words"
+                          className="ml-1 break-words text-xs"
                           style={{
                             color: `hsl(var(--marker-text-secondary))`,
-                            wordWrap: 'break-word'
+                            wordWrap: 'break-word',
+                            fontSize: '11px'
                           }}
                         >
                           {formatDate(event.startDate)}
@@ -326,7 +329,7 @@ const MarkerInfoWindow = memo(({ event, onClose, isLoading, isCached, isPosition
       {/* Image Preview Modal */}
       {isImagePreviewOpen && event?.image && (
         <div 
-          className="image-preview-backdrop fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black bg-opacity-80 animate-in fade-in-0 duration-200"
+          className="image-preview-backdrop fixed inset-0 z-[20000] flex items-center justify-center p-2 sm:p-4 bg-black bg-opacity-80 animate-in fade-in-0 duration-200"
           style={{ backdropFilter: 'blur(4px)' }}
         >
           <div className="relative flex items-center justify-center animate-in zoom-in-95 duration-300">
@@ -348,8 +351,8 @@ const MarkerInfoWindow = memo(({ event, onClose, isLoading, isCached, isPosition
               alt={event.name}
               className="object-contain rounded-lg shadow-2xl block"
               style={{
-                maxWidth: '45vw', // Reduced from 90vw to 45vw (half size)
-                maxHeight: '45vh', // Reduced from 90vh to 45vh (half size)
+                maxWidth: '95vw', // Increased from 45vw to 95vw for mobile
+                maxHeight: '70vh', // Increased from 45vh to 70vh for mobile
                 width: 'auto',
                 height: 'auto'
               }}

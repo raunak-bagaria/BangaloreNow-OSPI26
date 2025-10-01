@@ -1,18 +1,25 @@
-import React, { useEffect, useCallback, useRef } from 'react';
-import { APIProvider, Map, useMap, useApiLoadingStatus, useApiIsLoaded } from '@vis.gl/react-google-maps';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
+import { APIProvider, Map, Marker, useMap, useApiLoadingStatus, useApiIsLoaded } from '@vis.gl/react-google-maps';
 import { MapStateProvider, useMapState } from './MapStateProvider.jsx';
 import OptimizedMarker from './OptimizedMarker.jsx';
 import MapErrorBoundary from './MapErrorBoundary.jsx';
 import Navbar from './Navbar.jsx';
+import { ENV } from '../lib/api.js';
 
 // Loading component
-const LoadingOverlay = () => {
+const LoadingOverlay = ({ isGettingLocation, locationPermissionDenied }) => {
   const apiLoadingStatus = useApiLoadingStatus();
   const apiIsLoaded = useApiIsLoaded();
 
-  if (apiIsLoaded) return null;
+  if (apiIsLoaded && !isGettingLocation) return null;
 
   const getLoadingMessage = () => {
+    if (isGettingLocation) {
+      return locationPermissionDenied 
+        ? 'Using default location (Bangalore)'
+        : 'Getting your location...';
+    }
+    
     switch (apiLoadingStatus) {
       case 'LOADING':
         return 'Loading Google Maps...';
@@ -25,13 +32,31 @@ const LoadingOverlay = () => {
     }
   };
 
+  const getSubMessage = () => {
+    if (isGettingLocation && !locationPermissionDenied) {
+      return 'Please allow location access to center the map around you';
+    }
+    if (isGettingLocation && locationPermissionDenied) {
+      return 'Location access denied - showing Bangalore';
+    }
+    if (apiLoadingStatus === 'LOADING') {
+      return 'Please wait while we load the map...';
+    }
+    if (apiLoadingStatus === 'FAILED') {
+      return 'Please check your internet connection and API key';
+    }
+    return null;
+  };
+
   return (
-    <div className="absolute inset-0 bg-background/90 flex items-center justify-center z-50">
+    <div className="absolute inset-0 bg-background/90 flex items-center justify-center z-50" style={{ pointerEvents: 'all' }}>
       <div className="text-center space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto"></div>
         <p className="text-foreground font-medium">{getLoadingMessage()}</p>
-        {apiLoadingStatus === 'LOADING' && (
-          <p className="text-muted-foreground text-sm">Please wait while we load the map...</p>
+        {getSubMessage() && (
+          <p className={`text-sm ${locationPermissionDenied ? 'text-yellow-500' : 'text-muted-foreground'}`}>
+            {getSubMessage()}
+          </p>
         )}
         {apiLoadingStatus === 'FAILED' && (
           <p className="text-red-500 text-sm">Please check your internet connection and API key</p>
@@ -42,7 +67,7 @@ const LoadingOverlay = () => {
 };
 
 // Inner map component with access to map instance
-const MapContent = () => {
+const MapContent = ({ userLocation, showUserMarker }) => {
   const map = useMap();
   const {
     events,
@@ -67,7 +92,6 @@ const MapContent = () => {
     
     if (result?.action === 'expandCluster' && map) {
       const cluster = result.data;
-      console.log(`🔍 Expanding cluster with ${cluster.count} events:`, cluster.events);
       
       if (!cluster.events || cluster.events.length === 0) {
         console.error('❌ No events in cluster');
@@ -81,7 +105,6 @@ const MapContent = () => {
       cluster.events.forEach(event => {
         const lat = Number(event.lat);
         const lng = Number(event.long);
-        console.log(`📍 Event coordinates: ${lat}, ${lng}`);
         if (!isNaN(lat) && !isNaN(lng)) {
           bounds.extend(new window.google.maps.LatLng(lat, lng));
           validEvents++;
@@ -100,7 +123,6 @@ const MapContent = () => {
       const currentZoom = map.getZoom();
       const targetZoom = Math.max(14, currentZoom + 3); // Ensure we reach zoom 14+ to disable clustering
       
-      console.log(`🎯 Zooming from ${currentZoom} to ${targetZoom} to break cluster`);
       map.setCenter(center);
       map.setZoom(targetZoom);
     }
@@ -125,7 +147,6 @@ const MapContent = () => {
 
   // Movement handlers that don't affect markers
   const handleDragStart = useCallback(() => {
-    console.log('🖱️ Drag start');
     setIsMapMoving(true);
     
     if (dragTimeoutRef.current) {
@@ -134,8 +155,6 @@ const MapContent = () => {
   }, [setIsMapMoving]);
 
   const handleDragEnd = useCallback(() => {
-    console.log('✋ Drag end');
-    
     dragTimeoutRef.current = setTimeout(() => {
       setIsMapMoving(false);
       handleBoundsChanged();
@@ -154,6 +173,11 @@ const MapContent = () => {
     }, 300);
   }, [map, updateZoom, handleBoundsChanged]);
 
+  // Add click handler for testing
+  const handleMapClick = useCallback((event) => {
+    // Map click handler
+  }, []);
+
   // Set up event listeners
   useEffect(() => {
     if (!map) return;
@@ -161,6 +185,7 @@ const MapContent = () => {
     const dragStartListener = map.addListener('dragstart', handleDragStart);
     const dragEndListener = map.addListener('dragend', handleDragEnd);
     const zoomChangedListener = map.addListener('zoom_changed', handleZoomChanged);
+    const clickListener = map.addListener('click', handleMapClick);
     
     // Initial bounds setup
     const idleListener = map.addListener('idle', () => {
@@ -172,14 +197,32 @@ const MapContent = () => {
       google.maps.event.removeListener(dragStartListener);
       google.maps.event.removeListener(dragEndListener);
       google.maps.event.removeListener(zoomChangedListener);
+      google.maps.event.removeListener(clickListener);
       
       if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
       if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
     };
-  }, [map, handleDragStart, handleDragEnd, handleZoomChanged, handleBoundsChanged]);
+  }, [map, handleDragStart, handleDragEnd, handleZoomChanged, handleMapClick, handleBoundsChanged]);
 
   return (
     <>
+      {/* User location marker */}
+      {showUserMarker && userLocation && window.google?.maps && (
+        <Marker
+          position={userLocation}
+          icon={{
+            path: window.google.maps.SymbolPath.CIRCLE,
+            fillColor: '#4285f4',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 3,
+            scale: 8
+          }}
+          title="Your Location"
+          zIndex={999}
+        />
+      )}
+      
       {/* Render markers - completely isolated from state changes */}
       {!isLoadingEvents && events.map((event) => (
         <OptimizedMarker
@@ -202,9 +245,61 @@ const MapContent = () => {
 
 // Main component
 const OptimizedMapComponent = () => {
-  const defaultCenter = { lat: 12.9716, lng: 77.5946 };
+  const [mapCenter, setMapCenter] = useState({ lat: 12.9716, lng: 77.5946 }); // Default to Bangalore
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(true);
+
+  // Get user's current location on initial load
+  useEffect(() => {
+    const getUserLocation = () => {
+      if (!navigator.geolocation) {
+        setIsGettingLocation(false);
+        return;
+      }
+      
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 10000, // 10 seconds timeout
+        maximumAge: 300000 // 5 minutes cache
+      };
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          
+          setMapCenter(userLocation);
+          setIsGettingLocation(false);
+        },
+        (error) => {
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              setLocationPermissionDenied(true);
+              break;
+            case error.POSITION_UNAVAILABLE:
+              break;
+            case error.TIMEOUT:
+              break;
+            default:
+              break;
+          }
+          
+          // Fall back to default Bangalore location
+          setIsGettingLocation(false);
+        },
+        options
+      );
+    };
+
+    getUserLocation();
+  }, []);
   
-  // Bangalore city boundaries  
+  // Bangalore city boundaries - adjust based on user location
+  const isUserInBangalore = mapCenter.lat >= 12.75 && mapCenter.lat <= 13.15 && 
+                           mapCenter.lng >= 77.35 && mapCenter.lng <= 77.85;
+                           
   const bangaloreBounds = {
     north: 13.15,
     south: 12.75,
@@ -218,41 +313,52 @@ const OptimizedMapComponent = () => {
     zoomControlOptions: {
       position: window.google?.maps?.ControlPosition?.RIGHT_CENTER,
     },
-    gestureHandling: 'greedy',
+    gestureHandling: 'greedy', // This should allow drag and zoom
     backgroundColor: 'rgb(17, 24, 39)',
     styles: [], // Keep empty when using mapId
     tilt: 0, // Disable 3D tilt for faster rendering
-    restriction: {
+    // Only restrict to Bangalore if user is in Bangalore or location was denied
+    restriction: (isUserInBangalore || locationPermissionDenied) ? {
       latLngBounds: bangaloreBounds,
       strictBounds: false
-    },
+    } : undefined,
     renderingType: 'RASTER', // Use raster tiles for faster loading
     mapTypeControl: false,
     streetViewControl: false,
     fullscreenControl: false,
     clickableIcons: false,
-    minZoom: 10,
+    draggable: true,  // Explicitly enable dragging
+    scrollwheel: true, // Explicitly enable scroll wheel zoom
+    doubleClickZoom: true, // Enable double click zoom
+    minZoom: 8,  // Reduced from 10 to allow more zoom out
     maxZoom: 20
   };
 
   return (
     <MapStateProvider>
-      <div className="w-full h-screen bg-gray-900 relative">
+      <div className="w-full h-screen bg-gray-900 relative" style={{ pointerEvents: 'auto' }}>
         <APIProvider 
-          apiKey="AIzaSyCTWEDs6_36PKstsj2jfzZzs4TqxquA1RA"
+          apiKey={ENV.GOOGLE_MAPS_API_KEY}
           libraries={['marker', 'geometry']}
         >
           <MapErrorBoundary>
-            <LoadingOverlay />
+            <LoadingOverlay 
+              isGettingLocation={isGettingLocation}
+              locationPermissionDenied={locationPermissionDenied}
+            />
             <Map
-              defaultCenter={defaultCenter}
-              defaultZoom={12}
+              defaultCenter={mapCenter}
+              defaultZoom={14}
               options={mapOptions}
               className="w-full h-full"
-              mapId="da06caae89cc4238b61f553a"
+              mapId={ENV.GOOGLE_MAPS_MAP_ID}
               colorScheme="DARK"
+              style={{ pointerEvents: 'auto' }}
             >
-              <MapContent />
+              <MapContent 
+                userLocation={mapCenter}
+                showUserMarker={!isGettingLocation && !locationPermissionDenied && (mapCenter.lat !== 12.9716 || mapCenter.lng !== 77.5946)}
+              />
             </Map>
             <Navbar />
           </MapErrorBoundary>

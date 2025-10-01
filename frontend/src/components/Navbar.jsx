@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Map, Radio, User, Settings, LogOut, UserCircle } from 'lucide-react';
+import { Map, User, Settings, LogOut, UserCircle } from 'lucide-react';
 
 const Navbar = ({ isMapMoving = false }) => {
   const [currentText, setCurrentText] = useState('Bangalore');
@@ -41,7 +41,6 @@ const Navbar = ({ isMapMoving = false }) => {
   }, []);
 
   const handleNavigation = (section) => {
-    console.log(`Navigating to ${section}`);
     // Add your navigation logic here
   };
 
@@ -84,13 +83,6 @@ const Navbar = ({ isMapMoving = false }) => {
               <Map className="w-4 h-4 mr-2" />
               Map
             </button>
-            <button
-              onClick={() => handleNavigation('radio')}
-              className="flex items-center px-3 py-2 rounded-xl text-gray-300 hover:text-accent hover:bg-secondary/60 transition-all duration-200 font-medium"
-            >
-              <Radio className="w-4 h-4 mr-2" />
-              Radio
-            </button>
           </div>
 
           {/* Right side - Account (Desktop) and Mobile Navigation */}
@@ -101,7 +93,8 @@ const Navbar = ({ isMapMoving = false }) => {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-8 w-8 rounded-full hover:bg-secondary/60 focus:bg-secondary/60"
+                    className="relative h-8 w-8 rounded-full opacity-50 cursor-not-allowed"
+                    disabled
                   >
                     <Avatar className="h-6 w-6">
                       <AvatarImage src="/avatars/user.png" alt="User" />
@@ -162,19 +155,13 @@ const Navbar = ({ isMapMoving = false }) => {
               >
                 <Map className="w-4 h-4" />
               </button>
-              <button
-                onClick={() => handleNavigation('radio')}
-                className="p-2 rounded-xl text-gray-300 hover:text-accent hover:bg-secondary/60 transition-all duration-200"
-                title="Radio"
-              >
-                <Radio className="w-4 h-4" />
-              </button>
               {/* Avatar for mobile */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-8 w-8 rounded-full hover:bg-secondary/60 focus:bg-secondary/60"
+                    className="relative h-8 w-8 rounded-full opacity-50 cursor-not-allowed"
+                    disabled
                   >
                     <Avatar className="h-6 w-6">
                       <AvatarImage src="/avatars/user.png" alt="User" />

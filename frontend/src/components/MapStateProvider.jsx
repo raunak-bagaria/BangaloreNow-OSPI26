@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useCallback, useRef, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
+import { getApiUrl, API_ENDPOINTS } from '../lib/api.js';
 
 /**
  * Isolated state management for map interactions
@@ -42,7 +43,6 @@ export const MapStateProvider = ({ children }) => {
     
     // Disable clustering at much lower zoom levels for easier splitting
     if (currentZoom >= 14) {
-      console.log(`🚫 Clustering disabled at zoom ${currentZoom} - showing ${events.length} individual markers`);
       return events.map(event => ({
         ...event,
         position: { lat: Number(event.lat), lng: Number(event.long) },
@@ -86,8 +86,6 @@ export const MapStateProvider = ({ children }) => {
         const avgLat = nearby.reduce((sum, e) => sum + Number(e.lat), 0) / nearby.length;
         const avgLng = nearby.reduce((sum, e) => sum + Number(e.long), 0) / nearby.length;
         
-        console.log(`🔗 Creating cluster with ${nearby.length} events at zoom ${currentZoom}`);
-        
         clusters.push({
           id: `cluster-${i}`,
           lat: avgLat,
@@ -114,10 +112,9 @@ export const MapStateProvider = ({ children }) => {
   const fetchEvents = useCallback(async () => {
     try {
       setIsLoadingEvents(true);
-      const response = await fetch('http://127.0.0.1:8000/api/get-all-events');
+      const response = await fetch(getApiUrl(API_ENDPOINTS.GET_ALL_EVENTS));
       const data = await response.json();
       setEvents(data);
-      console.log(`✅ Loaded ${data.length} events`);
     } catch (error) {
       console.error('Error fetching events:', error);
     } finally {
@@ -132,7 +129,7 @@ export const MapStateProvider = ({ children }) => {
     
     try {
       setIsLoadingDetails(true);
-      const response = await fetch(`http://127.0.0.1:8000/api/get-event-details/${eventId}`);
+      const response = await fetch(getApiUrl(API_ENDPOINTS.GET_EVENT_DETAILS(eventId)));
       const data = await response.json();
       
       setEventDetailsCache(prev => ({ ...prev, [eventId]: data }));
@@ -147,28 +144,17 @@ export const MapStateProvider = ({ children }) => {
   
   // Marker interaction handlers - no state cascade
   const handleMarkerClick = useCallback(async (eventId, clusterData = null) => {
-    console.log(`🖱️ Marker clicked: ${eventId}`);
-    
     if (clusterData?.isCluster) {
-      // Return cluster data for parent to handle
       return { action: 'expandCluster', data: clusterData };
     }
     
-    // Prevent rapid clicks
-    if (selectedEventId === eventId && eventDetailsCache[eventId]) {
-      return;
-    }
-    
     setSelectedEventId(eventId);
-    
-    if (!eventDetailsCache[eventId]) {
-      await fetchEventDetails(eventId);
-    }
-  }, [selectedEventId, eventDetailsCache, fetchEventDetails]);
+    setIsLoadingDetails(true);
+  }, []);
   
   const handleInfoClose = useCallback(() => {
-    console.log('🚫 Info window closed');
     setSelectedEventId(null);
+    setIsLoadingDetails(false);
   }, []);
   
   // Bounds management without triggering marker updates
@@ -177,7 +163,6 @@ export const MapStateProvider = ({ children }) => {
     
     // Only refresh if this isn't the initial load
     if (!hasInitialLoadRef.current) {
-      console.log('📍 Initial bounds set - skipping refresh');
       hasInitialLoadRef.current = true;
       return;
     }
@@ -199,7 +184,6 @@ export const MapStateProvider = ({ children }) => {
       const lngDiff = Math.abs(bounds.east - lastBounds.east);
       
       if (latDiff > 0.02 || lngDiff > 0.02) {
-        console.log('🗺️ Significant movement - refreshing events');
         lastRefreshBoundsRef.current = bounds;
         fetchEvents();
       }
@@ -209,12 +193,10 @@ export const MapStateProvider = ({ children }) => {
   // Zoom tracking for clustering
   const updateZoom = useCallback((zoom) => {
     setCurrentZoom(zoom);
-    console.log('🔍 Zoom changed to:', zoom);
   }, []);
   
   // Initialize data on mount
   React.useEffect(() => {
-    console.log('🚀 Initial event load');
     fetchEvents();
   }, [fetchEvents]);
   

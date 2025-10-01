@@ -16,11 +16,9 @@ async def retrieve_all_events(session:Session=Depends(get_db)):
     """Get all events with coordinates. Includes events with null fields as long as name, lat, long exist."""
     try:
         payload = get_all_events(session)  # type:ignore
-        print(f"Retrieved {len(payload)} events with valid coordinates")
         return payload
     
     except Exception as e:
-        print(f"Error retrieving all events: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving events: {str(e)}"
@@ -41,8 +39,6 @@ async def retrieve_event_detail(event_id:int, session:Session=Depends(get_db) ):
         return payload
     
     except Exception as e:
-        # Log the error for debugging
-        print(f"Error retrieving event {event_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving event details: {str(e)}"

@@ -321,3 +321,40 @@ html {
     opacity: 1;
   }
 }
+
+/* Mobile-specific utilities for info windows */
+@media (max-width: 640px) {
+  .marker-info-window {
+    font-size: 0.875rem; /* 14px */
+  }
+  
+  .marker-info-window .text-xs {
+    font-size: 0.75rem; /* 12px */
+  }
+  
+  .marker-info-window h3 {
+    line-height: 1.25;
+  }
+  
+  /* Better text wrapping on mobile */
+  .mobile-text-wrap {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+}
+
+/* Responsive text utilities */
+.responsive-text {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+}
+
+/* Info window specific responsive adjustments */
+.info-window-mobile {
+  @media (max-width: 640px) {
+    padding: 0.75rem;
+    min-height: auto;
+  }
+}

@@ -75,9 +75,10 @@ const OptimizedMarker = memo(({
   }, [map, position, isSelected]);
 
   const handleClick = useCallback(() => {
-    console.log('🖱️ Optimized marker clicked:', eventId);
-    onMarkerClick(eventId, isCluster ? clusterData : null);
-  }, [eventId, onMarkerClick, isCluster, clusterData]);
+    if (onMarkerClick) {
+      onMarkerClick(eventId, clusterData);
+    }
+  }, [eventId, onMarkerClick, clusterData]);
 
   const handleMouseEnter = useCallback(() => setIsHovered(true), []);
   const handleMouseLeave = useCallback(() => setIsHovered(false), []);
