@@ -5,6 +5,12 @@ from app.core.config import settings
 
 app = FastAPI()
 
+# Debug: Print environment and CORS configuration
+print("🔧 Environment:", settings.ENVIRONMENT)
+print("🏠 Frontend Host:", settings.FRONTEND_HOST)
+print("🌐 BACKEND_CORS_ORIGINS raw:", settings.BACKEND_CORS_ORIGINS)
+print("✅ All CORS Origins:", settings.all_cors_origins)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.all_cors_origins,

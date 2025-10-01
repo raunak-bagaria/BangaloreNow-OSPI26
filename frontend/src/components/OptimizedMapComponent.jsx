@@ -315,7 +315,7 @@ const OptimizedMapComponent = () => {
     },
     gestureHandling: 'greedy', // This should allow drag and zoom
     backgroundColor: 'rgb(17, 24, 39)',
-    styles: [], // Keep empty when using mapId
+    // Removed styles property - not compatible with mapId
     tilt: 0, // Disable 3D tilt for faster rendering
     // Only restrict to Bangalore if user is in Bangalore or location was denied
     restriction: (isUserInBangalore || locationPermissionDenied) ? {
