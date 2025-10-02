@@ -3,12 +3,13 @@ from sqlalchemy import select, func
 from datetime import datetime, timedelta, timezone
 from app.model import Event
 from app.schemas import EventBase, EventDetails
+from app.core.config import settings
 
 def get_all_events(session: Session) -> list[EventBase]:
     """Get all events with their coordinates - only requires name, lat, long to be non-null"""
     # Get current date in UTC timezone to match timestamptz
     today = datetime.now(timezone.utc).date()
-    end_date = today + timedelta(days=4)
+    end_date = today + timedelta(days=settings.EVENT_DAYS_DELTA)
     
     # Use a subquery to get distinct event names with their minimum ID (consistent selection)
     distinct_events_subquery = session.execute(

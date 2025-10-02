@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     POSTGRES_USER:str
     POSTGRES_PASSWORD:str=""
     POSTGRES_DB:str=""
-    
+    EVENT_DAYS_DELTA:int
     @computed_field # type : ignore[prop-decorator]
     @property
     def SQL_ALCHEMY_URI(self)->PostgresDsn: 
