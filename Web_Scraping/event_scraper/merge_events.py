@@ -34,7 +34,8 @@ def main():
             continue
 
         event["last_updated"] = datetime.utcnow().isoformat()
-        master_map[key] = event  # overwrite or insert
+        # Update existing event or add a new one if we haven't seen it before
+        master_map[key] = event
 
     merged_events = list(master_map.values())
 

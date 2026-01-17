@@ -32,7 +32,7 @@ class AlleventsSpider(scrapy.Spider):
             if not link or not re.search(r"/\d+$", link):
                 continue
 
-            # Try extracting date from listing text (fast filter)
+            # Quick check: try to get the date from the event listing to filter early
             date_text = " ".join(card.css("::text").getall())
             date_text = re.sub(r"\s+", " ", date_text).strip()
 
@@ -83,7 +83,7 @@ class AlleventsSpider(scrapy.Spider):
             except Exception:
                 pass
 
-        # ---------------- JSON-LD FIELDS ONLY ----------------
+        # Start extracting event details from the structured data on the page
         event_id = None
         start_date = None
         start_time = None
@@ -96,18 +96,18 @@ class AlleventsSpider(scrapy.Spider):
         event_key = None
 
         if event_schema:
-            # ---------- EVENT ID ----------
+            # Get the event ID from the URL (it's usually the number at the end)
             event_id_match = re.search(r"/(\d+)$", response.url)
             event_id = event_id_match.group(1) if event_id_match else None
 
-            # ---------- EVENT KEY ----------
+            # Create a unique key for this event so we can track it
             if event_id:
                 event_key = f"allevents:{event_id}"
             else:
-                # fallback: URL-based key (rare but safe)
+                # Fallback: if we can't find an ID, use a hash of the URL (doesn't happen often)
                 event_key = f"allevents:url:{hash(response.url)}"
 
-            # Date & time
+            # Extract the event date and time
             start_dt = event_schema.get("startDate")
             if start_dt:
                 if "T" in start_dt:
@@ -117,7 +117,7 @@ class AlleventsSpider(scrapy.Spider):
                 else:
                     start_date = start_dt
 
-            # Venue
+            # Get the venue name and address
             location = event_schema.get("location", {})
             if isinstance(location, dict):
                 venue_name = location.get("name")
@@ -132,16 +132,15 @@ class AlleventsSpider(scrapy.Spider):
                         address.get("addressCountry"),
                     ]))
 
-            # Organizer (JSON-LD ONLY)
-            # ---------- ORGANIZER ----------
+            # Try to find the organizer name - check multiple places
             organizer_name = None
 
-            # 1️⃣ JSON-LD (highest priority)
+            # First, check the structured data (this is usually the most reliable)
             organizer = event_schema.get("organizer") if event_schema else None
             if isinstance(organizer, dict):
                 organizer_name = organizer.get("name")
 
-            # 2️⃣ Text fallback: Hosted by / Curated by / By
+            # If that didn't work, look for text like "Hosted by", "Curated by", or "By" on the page
             if not organizer_name:
                 organizer_text = response.xpath(
                     '//*[contains(text(),"Hosted by") or contains(text(),"Curated by") or contains(text(),"By ")]/text()'
@@ -155,38 +154,38 @@ class AlleventsSpider(scrapy.Spider):
                         flags=re.I
                     )
 
-            # Normalize empty strings
+            # Make sure empty strings become None
             organizer_name = organizer_name or None
 
 
-            # ---------- TICKET PRICE (NORMALIZED) ----------
-            # 1️⃣ JSON-LD price (most reliable)
+            # Figure out the ticket price - try a few different places
+            # First, check the structured data (most reliable)
             offers = event_schema.get("offers") if event_schema else None
             if isinstance(offers, dict):
                 price = offers.get("price")
                 if price:
                     ticket_price = f"₹{price}"
 
-            # 2️⃣ Explicit FREE detection
+            # If no price found, check if the page says "free entry" or "free event"
             if not ticket_price:
                 page_text = " ".join(response.xpath("//body//text()").getall()).lower()
                 if "free entry" in page_text or "free event" in page_text:
                     ticket_price = "Free"
 
-            # 3️⃣ ₹ price extraction fallback
+            # Last resort: search for price patterns like "₹500" in the page text
             if not ticket_price:
                 price_match = re.search(r'₹\s?\d+(?:\s?-\s?₹?\d+)?', page_text)
                 if price_match:
                     ticket_price = price_match.group(0).replace(" ", "")
 
-            # ---------- TICKET URL (NORMALIZED) ----------
-            # 1️⃣ JSON-LD ticket URL (most reliable)
+            # Find the ticket purchase URL - try a few different strategies
+            # First, check the structured data (usually the best source)
             if event_schema:
                 offers = event_schema.get("offers")
                 if isinstance(offers, dict):
                     ticket_url = offers.get("url")
 
-            # 2️⃣ Fallback: link containing BOTH "tickets" and event_id
+            # If that didn't work, look for links with "tickets" that also have the event ID
             if not ticket_url and event_id:
                 ticket_links = response.css('a[href*="tickets"]::attr(href)').getall()
                 for link in ticket_links:
@@ -194,19 +193,18 @@ class AlleventsSpider(scrapy.Spider):
                         ticket_url = response.urljoin(link)
                         break
 
-            # 3️⃣ Final sanity check
+            # Make sure the URL is complete (starts with http/https)
             if ticket_url and not ticket_url.startswith("http"):
                 ticket_url = response.urljoin(ticket_url)
-            
 
-            # 4️⃣ If the event page itself is a ticket page, use it
+            # If we're already on a ticket page, just use this URL
             if not ticket_url and "tickets" in response.url:
                 ticket_url = response.url
 
 
 
 
-            # ---------- CATEGORIES (STRICT & CLEAN) ----------
+            # Extract event categories from the page description
             categories = []
 
             description_text = " ".join(
@@ -227,7 +225,7 @@ class AlleventsSpider(scrapy.Spider):
             categories = list(set(categories)) or None
 
 
-        # ---------------- HTML SAFE FIELDS ----------------
+        # Get the title and description directly from the HTML
         title = response.css("h1::text").get()
         title = title.strip() if title else None
 
@@ -240,7 +238,7 @@ class AlleventsSpider(scrapy.Spider):
             if description_block else None
         )
 
-        # ---------------- FINAL ITEM ----------------
+        # Put everything together into the final event item
         item = EventItem()
         item["event_id"] = event_id
         item["event_name"] = title
@@ -262,15 +260,17 @@ class AlleventsSpider(scrapy.Spider):
 
 
         
-        # ---------- DATE FILTER (STEP 4) ----------
+        # Final check: only include events happening soon (within the next 30 days)
         if start_date:
             event_date = datetime.strptime(start_date, "%Y-%m-%d").date()
             today = date.today()
             cutoff = today + timedelta(days=self.MAX_DAYS_AHEAD)
 
+            # Skip events that are in the past or too far in the future
             if event_date < today or event_date > cutoff:
                 return
         else:
+            # If we don't have a date, skip this event
             return
 
 
