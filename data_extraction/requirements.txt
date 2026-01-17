@@ -1,0 +1,15 @@
+# Web scraping dependencies (easy install)
+# Grab them all with: pip install -r requirements.txt
+
+# Core crawler
+scrapy>=2.14.0
+
+# Pipeline adapter
+itemadapter>=0.13.0
+
+# Playwright support for JS-heavy pages
+scrapy-playwright>=0.0.45
+playwright>=1.57.0
+
+# Config via .env (optional)
+python-dotenv>=1.0.0
