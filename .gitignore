@@ -16,7 +16,9 @@ logs/
 .scrapy/
 
 
-
+# Scraper outputs
+data_extraction/event_scraper/data/*.json
+data_extraction/event_scraper/logs/
 Web_Scraping/event_scraper/data/*.json
 
 

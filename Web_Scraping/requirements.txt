@@ -1,9 +1,0 @@
-# Web Scraping Dependencies
-# Install with: pip install -r requirements.txt
-
-# Web scraping framework
-scrapy>=2.14.0
-
-# Item adapter for Scrapy pipelines
-itemadapter>=0.13.0
-
