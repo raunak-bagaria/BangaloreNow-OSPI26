@@ -18,6 +18,11 @@ class AlleventsSpider(scrapy.Spider):
         "CONCURRENT_REQUESTS": 4,
     }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Track seen event_keys to avoid duplicates within this source
+        self.seen_events = set()
+
     def parse(self, response):
         today = datetime.utcnow().date()
         cutoff_date = today + timedelta(days=self.MAX_DAYS_AHEAD)
@@ -305,5 +310,11 @@ class AlleventsSpider(scrapy.Spider):
             # If we don't have a date, skip this event
             return
 
-
+        # Check for duplicates within this source before yielding
+        event_key = item.get("event_key")
+        if event_key in self.seen_events:
+            self.logger.warning(f"Duplicate event skipped: {event_key}")
+            return
+        
+        self.seen_events.add(event_key)
         yield item

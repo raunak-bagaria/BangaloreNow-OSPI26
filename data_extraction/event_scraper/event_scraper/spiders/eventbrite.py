@@ -12,6 +12,11 @@ class EventbriteSpider(scrapy.Spider):
     allowed_domains = ["eventbrite.com"]
     
     MAX_DAYS_AHEAD = 90
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Track seen event_keys to avoid duplicates within this source
+        self.seen_events = set()
     
     custom_settings = {
         "CLOSESPIDER_PAGECOUNT": 100,
@@ -447,4 +452,10 @@ class EventbriteSpider(scrapy.Spider):
         item["last_updated"] = datetime.now().isoformat()
         item["event_key"] = event_key
         
+        # Check for duplicates within this source before yielding
+        if event_key in self.seen_events:
+            self.logger.warning(f"Duplicate event skipped: {event_key}")
+            return
+        
+        self.seen_events.add(event_key)
         yield item

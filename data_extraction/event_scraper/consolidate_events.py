@@ -43,6 +43,27 @@ def main():
     print(f"   - allevents.in: {len(allevents_data)} events")
     print(f"   - eventbrite.com: {len(eventbrite_data)} events")
 
+    # Check for duplicates within each source as a fallback
+    def check_duplicates_in_source(data, source_name):
+        seen = set()
+        duplicates = []
+        for event in data:
+            key = event.get("event_key")
+            if key in seen:
+                duplicates.append(key)
+            else:
+                seen.add(key)
+        if duplicates:
+            print(f"\n⚠️  Found {len(duplicates)} duplicate(s) in {source_name}:")
+            for dup in duplicates[:5]:  # Show first 5
+                print(f"     - {dup}")
+            if len(duplicates) > 5:
+                print(f"     ... and {len(duplicates) - 5} more")
+        return duplicates
+
+    allevents_dups = check_duplicates_in_source(allevents_data, "allevents.in")
+    eventbrite_dups = check_duplicates_in_source(eventbrite_data, "eventbrite.com")
+
     # Deduplicate by event_key
     combined_map = {}
 
