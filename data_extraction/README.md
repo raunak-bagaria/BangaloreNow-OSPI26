@@ -65,6 +65,13 @@ python3 run_eventbrite.py     # Pull eventbrite.com listings
 # Merge everything into the master file
 python3 consolidate_events.py
 
+# Load into Supabase (geocode + upsert)
+# Requires SUPABASE_URL + SUPABASE_KEY (or SUPABASE_SERVICE_ROLE_KEY) and base_geo
+python3 load_to_supabase.py
+
+# Or run the full pipeline end-to-end:
+python3 run_pipeline.py
+
 # Optional: refresh Eventbrite every 3 hours
 python3 schedule_eventbrite.py  # Keep Eventbrite in sync
 ```
