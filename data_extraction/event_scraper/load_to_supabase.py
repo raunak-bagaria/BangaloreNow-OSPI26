@@ -151,7 +151,8 @@ def _to_db_row(event: dict[str, Any], geocoder: GoogleGeocoder | None) -> dict[s
         return None
 
     venue = event.get("venue_name")
-    address = event.get("venue_address")
+    # Prefer the normalized address produced by output_enhancer.py when present.
+    address = event.get("resolved_venue_address") or event.get("venue_address")
 
     lat = None
     lng = None
