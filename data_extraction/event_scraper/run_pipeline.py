@@ -4,8 +4,10 @@
 Runs:
   1) Allevents spider -> data/allevents.json
   2) Eventbrite spider (Playwright) -> data/eventbrite.json
-  3) Consolidation -> data/events_master.json
-  4) Load -> Supabase (geocode + upsert)
+  3) District scraper (Playwright) -> data/district.json
+  4) Output enhancer -> cleaned_data/*_cleaned.json
+  5) Consolidation -> cleaned_data/events_master.json
+  6) Load -> Supabase (geocode + upsert)
 
 This is intended to be called from cron.
 
@@ -35,6 +37,8 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip-allevents", action="store_true")
     parser.add_argument("--skip-eventbrite", action="store_true")
+    parser.add_argument("--skip-district", action="store_true")
+    parser.add_argument("--skip-enhancer", action="store_true")
     parser.add_argument("--skip-consolidate", action="store_true")
     parser.add_argument("--skip-load", action="store_true")
     parser.add_argument("--skip-geocoding", action="store_true")
@@ -45,6 +49,12 @@ def main(argv: list[str]) -> int:
 
     if not args.skip_eventbrite:
         _run([sys.executable, str(SCRIPT_DIR / "run_eventbrite.py")])
+
+    if not args.skip_district:
+        _run([sys.executable, str(SCRIPT_DIR / "run_district.py")])
+
+    if not args.skip_enhancer:
+        _run([sys.executable, str(SCRIPT_DIR / "output_enhancer.py")])
 
     if not args.skip_consolidate:
         _run([sys.executable, str(SCRIPT_DIR / "consolidate_events.py")])

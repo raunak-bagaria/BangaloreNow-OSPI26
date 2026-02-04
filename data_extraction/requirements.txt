@@ -17,3 +17,8 @@ python-dotenv>=1.0.0
 # For geocoding + loading into Supabase
 requests>=2.31.0
 supabase>=2.0.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+

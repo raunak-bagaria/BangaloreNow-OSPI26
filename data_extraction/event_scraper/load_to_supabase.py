@@ -40,7 +40,7 @@ from supabase import Client, create_client
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[1]
-DEFAULT_INPUT = SCRIPT_DIR / "data" / "events_master.json"
+DEFAULT_INPUT = SCRIPT_DIR / "cleaned_data" / "events_master.json"
 
 
 def _load_dotenv_best_effort() -> None:
