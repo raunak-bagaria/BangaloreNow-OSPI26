@@ -180,11 +180,16 @@ def normalize_event_address(event):
 # =====================
 
 def load_events(filename):
-    with open(INPUT_DATA_DIR / filename, "r", encoding="utf-8") as f:
+    path = INPUT_DATA_DIR / filename
+    if not path.exists():
+        print(f"Missing input: {path} (skipping)")
+        return []
+    with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def save_events(filename, events):
     out_name = filename.replace(".json", "_cleaned.json")
+    OUTPUT_DATA_DIR.mkdir(parents=True, exist_ok=True)
     with open(OUTPUT_DATA_DIR / out_name, "w", encoding="utf-8") as f:
         json.dump(events, f, indent=2, ensure_ascii=False)
 
