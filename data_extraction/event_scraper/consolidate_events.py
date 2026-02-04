@@ -11,10 +11,11 @@ from datetime import datetime
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-DATA_DIR = SCRIPT_DIR / "data"
+DATA_DIR = SCRIPT_DIR / "cleaned_data"
 
-ALLEVENTS_FILE = DATA_DIR / "allevents.json"
-EVENTBRITE_FILE = DATA_DIR / "eventbrite.json"
+ALLEVENTS_FILE = DATA_DIR / "allevents_cleaned.json"
+EVENTBRITE_FILE = DATA_DIR / "eventbrite_cleaned.json"
+DISTRICT_FILE = DATA_DIR / "district_cleaned.json"
 MASTER_FILE = DATA_DIR / "events_master.json"
 
 
@@ -35,13 +36,15 @@ def main():
     print("CONSOLIDATING ALL EVENT SOURCES")
     print("=" * 60)
 
-    # Load both sources
+    # Load all sources
     allevents_data = load_json(ALLEVENTS_FILE)
     eventbrite_data = load_json(EVENTBRITE_FILE)
+    district_data = load_json(DISTRICT_FILE)
 
     print(f"\n📥 Loaded:")
     print(f"   - allevents.in: {len(allevents_data)} events")
     print(f"   - eventbrite.com: {len(eventbrite_data)} events")
+    print(f"   - district.in: {len(district_data)} events")
 
     # Check for duplicates within each source as a fallback
     def check_duplicates_in_source(data, source_name):
@@ -63,6 +66,7 @@ def main():
 
     allevents_dups = check_duplicates_in_source(allevents_data, "allevents.in")
     eventbrite_dups = check_duplicates_in_source(eventbrite_data, "eventbrite.com")
+    district_dups = check_duplicates_in_source(district_data, "district.in")
 
     # Deduplicate by event_key
     combined_map = {}
@@ -77,10 +81,15 @@ def main():
         if key:
             combined_map[key] = event
 
+    for event in district_data:
+        key = event.get("event_key")
+        if key:
+            combined_map[key] = event
+
     combined_events = list(combined_map.values())
 
     # Sort by start_date
-    combined_events.sort(key=lambda e: e.get("start_date", ""), reverse=False)
+    combined_events.sort(key=lambda e: e.get("start_date") or "", reverse=False)
 
     # Update timestamp
     for event in combined_events:
@@ -92,6 +101,7 @@ def main():
     print(f"   - Total unique events: {len(combined_events)}")
     print(f"   - allevents.in: {sum(1 for e in combined_events if 'allevents' in e.get('source', ''))}")
     print(f"   - eventbrite.com: {sum(1 for e in combined_events if 'eventbrite' in e.get('source', ''))}")
+    print(f"   - district.in: {sum(1 for e in combined_events if 'district' in e.get('source', ''))}")
     print(f"\n📁 Output: {MASTER_FILE}")
 
     # Print statistics

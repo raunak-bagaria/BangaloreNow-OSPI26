@@ -33,7 +33,7 @@ from dotenv import load_dotenv
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[1]
-DEFAULT_INPUT = SCRIPT_DIR / "data" / "events_master.json"
+DEFAULT_INPUT = SCRIPT_DIR / "cleaned_data" / "events_master.json"
 DEFAULT_OUTPUT = SCRIPT_DIR / "logs" / "geocode_failures.csv"
 
 

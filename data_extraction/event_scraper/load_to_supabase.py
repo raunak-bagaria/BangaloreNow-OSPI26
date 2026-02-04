@@ -40,7 +40,7 @@ from supabase import Client, create_client
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[1]
-DEFAULT_INPUT = SCRIPT_DIR / "data" / "events_master.json"
+DEFAULT_INPUT = SCRIPT_DIR / "cleaned_data" / "events_master.json"
 
 
 def _load_dotenv_best_effort() -> None:
@@ -151,7 +151,8 @@ def _to_db_row(event: dict[str, Any], geocoder: GoogleGeocoder | None) -> dict[s
         return None
 
     venue = event.get("venue_name")
-    address = event.get("venue_address")
+    # Prefer the normalized address produced by output_enhancer.py when present.
+    address = event.get("resolved_venue_address") or event.get("venue_address")
 
     lat = None
     lng = None
