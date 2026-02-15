@@ -80,7 +80,7 @@ export function FilterPanel({ onFilterChange, onClose, userLocation }) {
   return (
     <Card className="absolute top-20 left-4 z-[1000] w-96 max-h-[calc(100vh-120px)] overflow-y-auto bg-white/95 backdrop-blur shadow-lg rounded-lg">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between rounded-t-lg">
+      <div className="bg-white border-b px-4 py-3 flex items-center justify-between rounded-t-lg">
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-blue-600" />
           <h2 className="text-lg font-semibold text-gray-900">Filters</h2>

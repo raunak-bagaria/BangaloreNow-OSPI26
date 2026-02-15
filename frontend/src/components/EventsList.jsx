@@ -15,7 +15,7 @@ export function EventsList({ events, onEventClick, onClose }) {
 
   return (
     <Card className="absolute top-20 right-4 z-[1000] w-96 max-h-[calc(100vh-120px)] overflow-y-auto bg-white/95 backdrop-blur shadow-lg">
-      <div className="sticky top-0 bg-white border-b p-4">
+      <div className="bg-white border-b p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">
             Events Found ({events.length})
