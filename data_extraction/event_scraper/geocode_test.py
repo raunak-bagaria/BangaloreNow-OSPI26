@@ -22,6 +22,7 @@ import csv
 import json
 import os
 import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -150,6 +151,7 @@ def main(argv: list[str]) -> int:
     ok = 0
     failed = 0
     skipped_no_query = 0
+    geocode_count = 0  # Track actual geocoding API calls
 
     # Write header + rows of failures
     with open(out_path, "w", newline="", encoding="utf-8") as csvfile:
@@ -214,6 +216,12 @@ def main(argv: list[str]) -> int:
             # (requests.get timeout is set inside geocode_google; override globally here)
             # We keep it simple: temporarily call requests.get via geocode_google and rely on default.
             outcome = geocode_google(api_key, query)
+            geocode_count += 1
+
+            # Pause after every 100 geocoding requests to avoid rate limiting
+            if geocode_count % 100 == 0:
+                print(f"Pausing for 5 seconds after {geocode_count} geocoding requests...")
+                time.sleep(5)
 
             if outcome.ok:
                 ok += 1
