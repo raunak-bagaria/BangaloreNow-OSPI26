@@ -1,138 +1,80 @@
-# BangaloreNow
+<div align="center">
 
-### Your City, Unfiltered.
+# **BangaloreNow**
 
-> Bangalore is a city that never sleeps — a restless metropolis of innovation, ambition, and culture.
-> But in this endless churn, the truth gets buried. Signals drown in noise.
-> How do you know the *real* pulse of the city?
+**Your city, unfiltered.**
 
-**BangaloreNow is your singular answer.**
+Bangalore is fragmented — events scattered across private platforms, closed ecosystems, and walled ticketing apps. There is no single, transparent, open source of truth.
 
-We are building the definitive, real-time dashboard for Bangalore.
-Not another scattered blog, not another walled app — but a single, living system for everything that matters in this city.
+BangaloreNow changes that.
 
-🔗 Visit: [https://bangalorenow.live](https://bangalorenow.live)
+🔗 **[bangalore-now-ospi-26.vercel.app](https://bangalore-now-ospi-26.vercel.app)**
 
----
-
-## Beta Release: The Event Horizon
-
-This is our first battlefield: **events**.
-
-Bangalore is defined by constant movement — tech meetups, art shows, gigs, conferences, underground gatherings. Yet the city’s event space is fractured across platforms, feeds, and calendars.
-
-We unify it. Our automated pipeline hunts, filters, and enhances event data, collapsing it into a single, live view.
-
-Whether it’s:
-
-* A **startup pitch night** in Koramangala
-* A **concert** in Indiranagar
-* A **design workshop** in Jayanagar
-* Or an **academic lecture** in Malleshwaram
-
-If it’s happening, it’s on **BangaloreNow.live**.
-
-This is only the entry point.
+</div>
 
 ---
 
-## Our Foundation & Gratitude
+## What Is BangaloreNow?
 
-No revolution starts from nothing.
-Our pipeline builds upon the foundational work of **@captn3m0** and the **blr-today** project.
+BangaloreNow is a full-stack civic data platform that aggregates, cleans, geocodes, and exposes Bangalore's event data as open, structured intelligence. Not another blog. Not another walled app. Infrastructure — built for the city, owned by the city.
 
-Their open-source dataset, `events.db`, was the first step toward organizing the city’s chaos. We extend our respect and gratitude for their contribution.
-
-Explore their work here:
-👉 [https://github.com/blr-today/dataset](https://github.com/blr-today/dataset)
+The platform collects events from multiple sources, normalizes inconsistent data, deduplicates cross-platform listings, and surfaces everything through a filterable API and an interactive map frontend.
 
 ---
 
-## The Engine: Automated & Scalable
+## 🏗️ Architecture
 
-This is not a hobby script running on someone’s laptop.
-Our backbone is a **fully automated, cloud-native system** deployed on **Google Cloud Platform (GCP)**.
+The system follows a structured ETL-driven pipeline:
 
-* **Relentless ingestion** of new data
-* **Automated filtering and enrichment** for precision
-* **Scalable infrastructure** ready for city-scale load
-* **Enterprise-grade reliability**, engineered to run without interruption
+**Data Sources** — district.in / Zomato, allevents.in, eventbrite.com
 
-The result: when you open BangaloreNow, you see the city in **real time, with no lag and no gaps**.
+**Pipeline** — Cleaning & normalization → schema consolidation → Google Maps Geocoding (address → lat/lng) → cross-source deduplication → Supabase upsert
 
----
+**Storage** — PostgreSQL (Supabase), indexed for spatial and filtered queries
 
-## The Vision: Beyond Events
+**Backend** — FastAPI + SQLAlchemy ORM with filtering, pagination, sorting, and Haversine-based distance calculation
 
-Events are just the beginning. Our mission is to map **all moving parts of Bangalore** into a single living system.
-
-Near-term expansions include:
-
-* **Civic Intelligence** → Tracking BBMP tenders and public works to expose where taxpayer money flows.
-* **Urban Alerts** → Monitoring and reporting service disruptions like water shortages, power cuts, and civic hazards.
-* **Personalized Dashboards** → Empowering residents to build their own city cockpit: news, data, and alerts tailored to their lives.
-
-Long-term: to become the **indispensable urban dashboard for every citizen of Bangalore**.
+**Frontend** — React (Vite) + OpenStreetMap via Leaflet with dynamic markers, search panel, and responsive UI
 
 ---
 
-## Join the Revolution
+## 🛠️ Tech Stack
 
-This is not just another project.
-This is a stand against opacity, against platforms that silo knowledge, against fragmentation.
-
-Bangalore deserves **clarity, transparency, and access**.
-And it deserves a platform built in the **open**.
-
-We will open-source the entire system.
-No closed walls. No hidden APIs. No gatekeeping.
-
-This is a call to those willing to help **engineer the future of the city**.
-
-### We need you. Ranked by urgency:
-
-1. **Frontend Developers** — To craft the interface through which the city is seen.
-2. **Designers** — To shape raw data into experiences that inform, engage, and move people.
-3. **Backend / Cloud Engineers** — To strengthen the pipelines, scale the architecture, and ensure the system never breaks.
-4. **ML / MLOps Engineers** — To transform data into intelligence, detect anomalies, predict patterns, and automate insights.
+| Layer | Technologies |
+|---|---|
+| Frontend | React, Vite, Tailwind CSS, Leaflet (OpenStreetMap), Radix UI |
+| Backend | FastAPI, SQLAlchemy, Pydantic |
+| Database | PostgreSQL via Supabase |
+| External APIs | Google Maps Geocoding API |
 
 ---
 
-## Why Join Us?
+## 👥 Contributors
 
-* You’ll be building infrastructure that directly impacts **millions of residents**.
-* Your work will be **fully open-source**, credited to you, and freely used by the city.
-* You won’t just be another contributor. You’ll be part of the **founding circle** of a movement.
-
-This is your chance to put your mark on the **digital DNA of Bangalore**.
-
----
-
-## Contact
-
-**Siddartha A Y**
-* Email: [siddartha_ay@protonmail.com](mailto:siddartha_ay@protonmail.com)
-
-**Kushal B Gowda**
-* Email: [kushalb2005@gmail.com](mailto:kushalb2005@gmail.com)
+| | |
+|---|---|
+| **Siddarth** | [github.com/SiddarthAA](https://github.com/SiddarthAA) |
+| **Kushal** | [github.com/KBG05](https://github.com/KBG05) |
+| **Raunak Bagaria** | [github.com/raunak-bagaria](https://github.com/raunak-bagaria) |
+| **Gagana** | [github.com/GAGANA-P05](https://github.com/GAGANA-P05) |
+| **Kaushik** | [github.com/kaushik-dwarakanath](https://github.com/kaushik-dwarakanath) |
+| **SaiRishi** | [github.com/sairishigangarapu](https://github.com/sairishigangarapu) |
+| **Lalith** | [github.com/lalithbseervi](https://github.com/lalithbseervi) |
+| **Harsh Pandya** | [github.com/Seaweed-Boi](https://github.com/Seaweed-Boi) |
 
 ---
 
-## License
+## 📖 Open Data
 
-This project and its data are licensed under the **Open Data Commons Open Database License (ODbL) v1.0**.
+This project and its data are licensed under the **Open Data Commons Open Database License (ODbL) v1.0.**
 
-That means it will **always remain free and open**.
-You can use it, remix it, and build upon it — but you must also give back.
-
-This ensures the revolution cannot be privatized, sold off, or closed down.
+The data will always remain free and open. You can use it, remix it, and build on top of it — but if you build on it, you must give back. The commons cannot be privatized.
 
 ---
 
 <div align="center">
 
-# Know your city. Own your city. Build its future.
+## Know your city. Own your city. Build its future.
+🔗 **[bangalore-now-ospi-26.vercel.app](https://bangalore-now-ospi-26.vercel.app)**
 
-[https://bangalorenow.live](https://bangalorenow.live)
-
-</div>  
+</div>
