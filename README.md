@@ -24,6 +24,8 @@ The platform collects events from multiple sources, normalizes inconsistent data
 
 ## 🏗️ Architecture
 
+![Architecture diagram](docs/architecture.png)
+
 The system follows a structured ETL-driven pipeline:
 
 **Data Sources** — district.in / Zomato, allevents.in, eventbrite.com
