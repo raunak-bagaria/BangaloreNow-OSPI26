@@ -220,6 +220,11 @@ def main(argv: list[str]) -> int:
         action="store_true",
         help="Do not call Google geocoding (events without coords will be skipped)",
     )
+    parser.add_argument(
+        "--skip-dedup",
+        action="store_true",
+        help="Skip cross-source deduplication against existing DB rows",
+    )
 
     args = parser.parse_args(argv)
 
@@ -279,13 +284,28 @@ def main(argv: list[str]) -> int:
         print(f"No rows to upsert. Skipped={skipped}")
         return 0
 
+    # --- Cross-source deduplication ---
+    dedup_removed = 0
+    if not args.skip_dedup:
+        from cross_source_dedup import deduplicate, fetch_db_index
+
+        print("Fetching existing events for cross-source dedup...")
+        db_rows = fetch_db_index(client)
+        print(f"  DB index: {len(db_rows)} existing events")
+        rows, dedup_removed = deduplicate(rows, db_rows)
+        print(f"  Dedup removed {dedup_removed} duplicate(s); {len(rows)} remaining")
+
+    if not rows:
+        print(f"All rows were duplicates. dedup_removed={dedup_removed}, skipped={skipped}")
+        return 0
+
     total_upserted = 0
     for batch in _chunked(rows, args.batch):
         # Requires a UNIQUE index/constraint on (url).
         client.table("events").upsert(batch, on_conflict="url").execute()
         total_upserted += len(batch)
 
-    print(f"Upserted={total_upserted}, skipped={skipped}, input={len(events)}")
+    print(f"Upserted={total_upserted}, dedup_removed={dedup_removed}, skipped={skipped}, input={len(events)}")
     return 0
 
 

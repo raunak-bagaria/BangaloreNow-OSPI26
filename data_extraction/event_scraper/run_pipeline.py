@@ -64,6 +64,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--skip-consolidate", action="store_true")
     parser.add_argument("--skip-load", action="store_true")
     parser.add_argument("--skip-geocoding", action="store_true")
+    parser.add_argument("--skip-dedup", action="store_true")
     args = parser.parse_args(argv)
 
     scraper_ok = False  # tracks whether at least one scraper produced output
@@ -96,6 +97,8 @@ def main(argv: list[str]) -> int:
         load_cmd = [sys.executable, str(SCRIPT_DIR / "load_to_supabase.py")]
         if args.skip_geocoding:
             load_cmd.append("--skip-geocoding")
+        if args.skip_dedup:
+            load_cmd.append("--skip-dedup")
         _run(load_cmd)
 
     return 0
